@@ -8,28 +8,45 @@ const { criarTabelaTarefa } = require("../models/postgres/Tarefa");
 const {
   criarTabelaUsuarioEquipe,
   criarTabelaTarefaEquipe
-} = require("../models/postgres/Relacionamento");
+} = require("../models/postgres/relacionamentos");
 
 async function inicializarBanco() {
-  console.log("Iniciando criação das tabelas...");
+  try {
+    console.log("Iniciando criação das tabelas...");
 
-  await criarTabelaArea();
+    // Tabelas principais
+    await criarTabelaArea();
+    console.log("Tabela areas OK");
 
-  await criarTabelaFuncao();
+    await criarTabelaFuncao();
+    console.log("Tabela funcoes OK");
 
-  await criarTabelaSetor();
+    await criarTabelaSetor();
+    console.log("Tabela setores OK");
 
-  await criarTabelaEquipe();
+    await criarTabelaEquipe();
+    console.log("Tabela equipes OK");
 
-  await criarTabelaUsuario();
+    await criarTabelaUsuario();
+    console.log("Tabela usuarios OK");
 
-  await criarTabelaTarefa();
+    await criarTabelaTarefa();
+    console.log("Tabela tarefas OK");
 
-  await criarTabelaUsuarioEquipe();
+    // Tabelas de relacionamento
+    await criarTabelaUsuarioEquipe();
+    console.log("Tabela usuario_equipes OK");
 
-  await criarTabelaTarefaEquipe();
+    await criarTabelaTarefaEquipe();
+    console.log("Tabela tarefa_equipes OK");
 
-  console.log("Todas as tabelas foram criadas/verificadas.");
+    console.log("Todas as tabelas foram criadas/verificadas.");
+
+  } catch (error) {
+    console.error("Erro ao inicializar o banco de dados:");
+    console.error(error);
+    throw error;
+  }
 }
 
 module.exports = inicializarBanco;
