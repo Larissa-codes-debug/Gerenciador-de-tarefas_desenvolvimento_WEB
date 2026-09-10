@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
@@ -44,18 +45,17 @@ app.use("/api/relatorios", relatorioRoutes);
 const PORT = process.env.PORT || 3000;
 
 async function iniciarServidor() {
-  try {
-    await conectarMongoDB();
+    try {
+        await conectarMongoDB();
+        await inicializarBanco();
 
-    await inicializarBanco();
+        app.listen(PORT, () => {
+            console.log(`Servidor rodando na porta ${PORT}`);
+        });
 
-    app.listen(PORT, () => {
-      console.log(`Servidor rodando na porta ${PORT}`);
-    });
-
-  } catch (error) {
-    console.error("Erro ao iniciar servidor:", error);
-  }
+    } catch (error) {
+        console.error("Erro ao iniciar servidor:", error);
+    }
 }
 
 iniciarServidor();
