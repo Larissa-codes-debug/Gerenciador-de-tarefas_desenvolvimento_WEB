@@ -1,7 +1,7 @@
-const Observacao = require("../models/Observacao");
-const Justificativa = require("../models/Justificativa");
-const Notificacao = require("../models/Notificacao");
-const HistoricoTarefa = require("../models/HistoricoTarefa");
+const Observacao = require("../models/mongodb/Observacao");
+const Justificativa = require("../models/mongodb/Justificativa");
+const Notificacao = require("../models/mongodb/Notificacao");
+const HistoricoTarefa = require("../models/mongodb/HistoricoTarefa");
 
 async function criarObservacao(req, res) {
   try {

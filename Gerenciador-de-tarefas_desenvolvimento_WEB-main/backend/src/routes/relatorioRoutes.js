@@ -5,9 +5,8 @@ const autenticar = require("../middlewares/authMiddleware");
 const {
   criarObservacao,
   criarJustificativa,
-  listarNotificacoes,
   listarHistorico
-} = require("../controllers/documentosController");
+} = require("../controllers/relatorioController");
 
 const router = express.Router();
 
@@ -21,11 +20,6 @@ router.post(
 router.post(
   "/tarefas/:id/justificativas",
   criarJustificativa
-);
-
-router.get(
-  "/notificacoes",
-  listarNotificacoes
 );
 
 router.get(

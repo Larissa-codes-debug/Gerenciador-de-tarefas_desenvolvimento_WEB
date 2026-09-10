@@ -1,14 +1,19 @@
 const express = require("express");
 
 const {
-  registrar,
-  login
-} = require("../controllers/authController");
+  criarArea,
+  listarAreas,
+  buscarArea,
+  atualizarArea,
+  excluirArea
+} = require("../controllers/areaController");
 
 const router = express.Router();
 
-router.post("/register", registrar);
-
-router.post("/login", login);
+router.post("/", criarArea);
+router.get("/", listarAreas);
+router.get("/:id", buscarArea);
+router.put("/:id", atualizarArea);
+router.delete("/:id", excluirArea);
 
 module.exports = router;
