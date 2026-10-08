@@ -1,37 +1,9 @@
-const jwt = require("jsonwebtoken");
-
-function autenticar(req, res, next) {
-  try {
-    const authorization = req.headers.authorization;
-
-    if (!authorization) {
-      return res.status(401).json({
-        mensagem: "Token não informado."
-      });
-    }
-
-    const [tipo, token] = authorization.split(" ");
-
-    if (tipo !== "Bearer" || !token) {
-      return res.status(401).json({
-        mensagem: "Formato do token inválido."
-      });
-    }
-
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-
-    req.usuario = decoded;
-
-    next();
-
-  } catch (error) {
-    return res.status(401).json({
-      mensagem: "Token inválido ou expirado."
-    });
-  }
+const {verificarAccessToken}=require('../utils/jwt');
+function autenticar(req,res,next){
+  try{
+    const [tipo,token]=(req.headers.authorization||'').split(' ');
+    if(tipo!=='Bearer'||!token) return res.status(401).json({mensagem:'Token não informado ou formato inválido.'});
+    req.usuario=verificarAccessToken(token); next();
+  }catch(e){return res.status(401).json({mensagem:'Token inválido ou expirado.'});}
 }
-
-module.exports = autenticar;
+module.exports=autenticar;

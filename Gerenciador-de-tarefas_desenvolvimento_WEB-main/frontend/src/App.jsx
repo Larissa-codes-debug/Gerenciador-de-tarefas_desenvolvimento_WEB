@@ -1,16 +1,1 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from './pages/Login';
-
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/cadastro" element={<h1>Tela de Cadastro</h1>} />
-        <Route path="/dashboard" element={<h1>Dashboard de Tarefas</h1>} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
-
-export default App;
+import {BrowserRouter,Routes,Route,Navigate} from 'react-router-dom';import {AuthProvider} from './context/AuthContext';import ProtectedRoute from './components/ProtectedRoute';import Login from './pages/Login';import Dashboard from './pages/Dashboard';import Tarefas from './pages/Tarefas';import TarefaForm from './pages/TarefaForm';import TarefaDetalhe from './pages/TarefaDetalhe';import Usuarios from './pages/Usuarios';import './index.css';export default function App(){return <AuthProvider><BrowserRouter><Routes><Route path="/" element={<Login/>}/><Route path="/dashboard" element={<ProtectedRoute><Dashboard/></ProtectedRoute>}/><Route path="/tarefas" element={<ProtectedRoute><Tarefas/></ProtectedRoute>}/><Route path="/tarefas/nova" element={<ProtectedRoute roles={['ADMIN','GESTOR','SUPERVISOR']}><TarefaForm/></ProtectedRoute>}/><Route path="/tarefas/:id" element={<ProtectedRoute><TarefaDetalhe/></ProtectedRoute>}/><Route path="/usuarios" element={<ProtectedRoute roles={['ADMIN','GESTOR','SUPERVISOR']}><Usuarios/></ProtectedRoute>}/><Route path="*" element={<Navigate to="/dashboard"/>}/></Routes></BrowserRouter></AuthProvider>}
