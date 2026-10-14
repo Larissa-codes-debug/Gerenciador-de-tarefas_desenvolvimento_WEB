@@ -1,0 +1,1 @@
+const express=require('express');const autenticar=require('../middlewares/authMiddleware');const permitir=require('../middlewares/roleMiddleware');const c=require('../controllers/dashboardController');const r=express.Router();r.use(autenticar);r.get('/',c.dashboard);r.get('/relatorio',permitir('ADMIN','GESTOR','SUPERVISOR'),c.relatorio);module.exports=r;

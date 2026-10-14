@@ -1,21 +1,2 @@
-const express = require("express");
 
-const autenticar = require("../middlewares/authMiddleware");
-
-const {
-  listarUsuarios,
-  buscarUsuario,
-  atualizarUsuario,
-  excluirUsuario
-} = require("../controllers/usuarioController");
-
-const router = express.Router();
-
-router.use(autenticar);
-
-router.get("/", listarUsuarios);
-router.get("/:id", buscarUsuario);
-router.put("/:id", atualizarUsuario);
-router.delete("/:id", excluirUsuario);
-
-module.exports = router;
+const express=require('express');const autenticar=require('../middlewares/authMiddleware');const permitir=require('../middlewares/roleMiddleware');const c=require('../controllers/usuarioController');const r=express.Router();r.use(autenticar);r.get('/',permitir('ADMIN','GESTOR','SUPERVISOR'),c.listar);r.get('/:id',permitir('ADMIN','GESTOR','SUPERVISOR'),c.buscar);r.put('/:id',permitir('ADMIN'),c.atualizar);r.patch('/:id/bloquear',permitir('ADMIN'),c.bloquear);r.delete('/:id',permitir('ADMIN'),c.excluir);module.exports=r;
