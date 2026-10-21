@@ -1,5 +1,4 @@
 const pool = require('./postgres');
-const bcrypt = require('bcrypt');
 
 async function inicializarBanco() {
   await pool.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
@@ -72,11 +71,6 @@ async function inicializarBanco() {
     CREATE INDEX IF NOT EXISTS idx_usuarios_area ON usuarios(area_id);
     CREATE INDEX IF NOT EXISTS idx_usuarios_setor ON usuarios(setor_id);
   `);
-  const area = await pool.query("INSERT INTO areas(nome,descricao) VALUES('Administração','Área inicial do sistema') ON CONFLICT DO NOTHING RETURNING id");
-  await pool.query("INSERT INTO funcoes(nome,descricao) VALUES('Administrador','Administrador do sistema') ON CONFLICT DO NOTHING");
-  const email=(process.env.ADMIN_EMAIL||'admin@instituicao.local').toLowerCase();
-  const senha=await bcrypt.hash(process.env.ADMIN_PASSWORD||'Admin@12345',12);
-  await pool.query("INSERT INTO usuarios(nome,email,senha_hash,perfil) VALUES($1,$2,$3,'ADMIN') ON CONFLICT(email) DO UPDATE SET perfil='ADMIN',ativo=true,senha_hash=EXCLUDED.senha_hash,updated_at=NOW()",[process.env.ADMIN_NAME||'Administrador do Sistema',email,senha]);
-  console.log('PostgreSQL: schema + administrador inicial OK');
+  console.log('PostgreSQL: esquema verificado/criado. Provisionamento de administrador é executado separadamente.');
 }
 module.exports = inicializarBanco;
