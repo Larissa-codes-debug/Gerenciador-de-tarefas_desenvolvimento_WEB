@@ -3,8 +3,21 @@
   "version": "2.0.0",
   "private": true,
   "main": "src/server.js",
-  "scripts": {"start":"node src/server.js","dev":"node --watch src/server.js","seed":"node src/config/seed.js"},
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/config/seed.js",
+    "check": "node --check src/server.js && node --check src/controllers/authController.js && node --check src/controllers/tarefaController.js && node --check src/middlewares/authMiddleware.js",
+    "db:init": "node src/config/runInit.js"
+  },
   "dependencies": {
-    "bcrypt":"^6.0.0","cors":"^2.8.6","dotenv":"^17.4.2","express":"^5.2.1","jsonwebtoken":"^9.0.3","mongoose":"^8.24.4","nodemailer":"^7.0.6","pg":"^8.23.0"
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.24.4",
+    "nodemailer": "^7.0.6",
+    "pg": "^8.23.0"
   }
 }
