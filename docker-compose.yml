@@ -6,8 +6,8 @@ services:
     environment:
       POSTGRES_DB: gerenciador_tarefas
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports: ["5432:5432"]
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env da raiz}
+    ports: ["127.0.0.1:5432:5432"]
     volumes: [postgres_data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL","pg_isready -U postgres -d gerenciador_tarefas"]
@@ -18,7 +18,7 @@ services:
     image: mongo:7.0
     container_name: tarefas-mongodb
     restart: unless-stopped
-    ports: ["27017:27017"]
+    ports: ["127.0.0.1:27017:27017"]
     volumes: [mongodb_data:/data/db]
     healthcheck:
       test: ["CMD-SHELL","mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"]
@@ -30,7 +30,7 @@ services:
     container_name: tarefas-backend
     restart: unless-stopped
     env_file: ./backend/.env
-    ports: ["3000:3000"]
+    ports: ["127.0.0.1:3000:3000"]
     depends_on:
       postgres: {condition: service_healthy}
       mongodb: {condition: service_healthy}
@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
     environment:
       VITE_API_URL: http://localhost:3000/api
-    ports: ["5173:5173"]
+    ports: ["127.0.0.1:5173:5173"]
     depends_on: [backend]
 volumes:
   postgres_data:
