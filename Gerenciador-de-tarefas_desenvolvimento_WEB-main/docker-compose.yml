@@ -1,77 +1,143 @@
+name: tarefas
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
 
 services:
   postgres:
-    image: postgres:16-alpine
-    container_name: tarefas-postgres
-    restart: unless-stopped
+    <<: *hardening
+    image: postgres:16.4-alpine
     environment:
       POSTGRES_DB: gerenciador_tarefas
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env da raiz}
-    ports:
-      - "127.0.0.1:5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+      APP_DB_USER: ${APP_DB_USER:?Defina APP_DB_USER no .env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Defina APP_DB_PASSWORD no .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready -U postgres -d gerenciador_tarefas
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gerenciador_tarefas"]
+      interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+    networks: [data_net]
 
   mongodb:
-    image: mongo:7.0
-    container_name: tarefas-mongodb
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:27017:27017"
+    <<: *hardening
+    image: mongo:7.0.14
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Defina MONGO_ROOT_USER no .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Defina MONGO_ROOT_PASSWORD no .env}
+      MONGO_APP_USER: ${MONGO_APP_USER:?Defina MONGO_APP_USER no .env}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?Defina MONGO_APP_PASSWORD no .env}
     volumes:
       - mongodb_data:/data/db
+      - ./docker/mongo/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test:
-        - CMD-SHELL
-        - mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'
-      interval: 5s
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"]
+      interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 768M }
+    networks: [data_net]
 
   backend:
+    <<: *hardening
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    container_name: tarefas-backend
-    restart: unless-stopped
     env_file:
       - ./backend/.env
     environment:
+      NODE_ENV: production
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
       POSTGRES_DB: gerenciador_tarefas
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env da raiz}
-      MONGODB_URI: mongodb://mongodb:27017/gerenciador_tarefas
-    ports:
-      - "127.0.0.1:3000:3000"
+      POSTGRES_USER: ${APP_DB_USER}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+      MONGODB_URI: mongodb://${MONGO_APP_USER}:${MONGO_APP_PASSWORD}@mongodb:27017/gerenciador_tarefas?authSource=gerenciador_tarefas
+      CORS_ORIGINS: https://${DOMAIN:-localhost}
+    init: true
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
     depends_on:
       postgres:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/ready >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+    networks: [data_net, proxy_net]
 
   frontend:
+    <<: *hardening
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: tarefas-frontend
-    restart: unless-stopped
-    environment:
-      VITE_API_URL: http://localhost:3000/api
+      args:
+        VITE_API_URL: /api
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 128M }
+    networks: [proxy_net]
+
+  proxy:
+    <<: *hardening
+    image: caddy:2.8-alpine
     ports:
-      - "127.0.0.1:5173:5173"
+      - "${BIND_IP:-127.0.0.1}:80:80"
+      - "${BIND_IP:-127.0.0.1}:443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2019/config/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks: [proxy_net]
+
+networks:
+  data_net:
+    internal: true      # bancos sem acesso à internet nem ao host
+  proxy_net:
 
 volumes:
   postgres_data:
   mongodb_data:
+  caddy_data:
+  caddy_config:
