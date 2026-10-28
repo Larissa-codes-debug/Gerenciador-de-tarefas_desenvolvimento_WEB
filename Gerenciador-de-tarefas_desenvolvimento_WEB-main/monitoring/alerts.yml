@@ -1,0 +1,18 @@
+groups:
+  - name: tarefas
+    rules:
+      - alert: ExporterDown
+        expr: up == 0
+        for: 2m
+        labels: { severity: critical }
+      - alert: ContainerMemoriaAlta
+        expr: container_memory_working_set_bytes{name=~".*backend.*"} / container_spec_memory_limit_bytes{name=~".*backend.*"} > 0.85
+        for: 5m
+        labels: { severity: warning }
+      - alert: PostgresConexoesAltas
+        expr: sum(pg_stat_activity_count) / max(pg_settings_max_connections) > 0.8
+        for: 5m
+        labels: { severity: warning }
+      - alert: ContainerReiniciando
+        expr: increase(container_start_time_seconds{name=~".*tarefas.*"}[10m]) > 2
+        labels: { severity: critical }
