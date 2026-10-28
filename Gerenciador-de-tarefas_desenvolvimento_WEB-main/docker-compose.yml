@@ -43,8 +43,7 @@ services:
       - mongodb_data:/data/db
       - ./docker/mongo/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"]
-      interval: 10s
+
       timeout: 5s
       retries: 10
       start_period: 20s
