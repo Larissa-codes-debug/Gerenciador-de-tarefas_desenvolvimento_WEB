@@ -1,1 +1,15 @@
-import {Navigate} from 'react-router-dom';import {useAuth} from '../context/AuthContext';export default function ProtectedRoute({children,roles}){const {usuario,carregando}=useAuth();if(carregando)return <div className="loading">Carregando...</div>;if(!usuario)return <Navigate to="/" replace/>;if(roles&&!roles.includes(usuario.perfil))return <Navigate to="/dashboard" replace/>;return children}
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function ProtectedRoute({ children, roles }) {
+  const { usuario, carregando } = useAuth();
+
+  if (carregando) return <div className="loading">Verificando autenticação...</div>;
+  if (!usuario) return <Navigate to="/" replace />;
+
+  if (roles && !roles.includes(usuario.perfil)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
