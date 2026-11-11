@@ -1,115 +1,149 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../services/api';
+
+const tarefasDemo = {
+  1: {
+    id: 1,
+    titulo: 'Organizar documentação do projeto',
+    descricao:
+      'Organizar e revisar toda a documentação necessária para o projeto.',
+    responsavel_nome: 'Ana Carolina',
+    area_nome: 'Administrativo',
+    prazo: '2026-11-15T17:00',
+    prioridade: 'ALTA',
+    percentual_atendimento: 25,
+    custo_estimado: 850,
+    status: 'PENDENTE',
+    atrasada: false
+  },
+  2: {
+    id: 2,
+    titulo: 'Atualizar cadastro de usuários',
+    descricao:
+      'Revisar e atualizar os cadastros dos usuários do sistema.',
+    responsavel_nome: 'Mariana Silva',
+    area_nome: 'Recursos Humanos',
+    prazo: '2026-11-18T17:00',
+    prioridade: 'MEDIA',
+    percentual_atendimento: 60,
+    custo_estimado: 650,
+    status: 'EM_ANDAMENTO',
+    atrasada: false
+  },
+  3: {
+    id: 3,
+    titulo: 'Finalizar relatório mensal',
+    descricao:
+      'Finalizar o relatório mensal com os dados das atividades realizadas.',
+    responsavel_nome: 'Carlos Eduardo',
+    area_nome: 'Operações',
+    prazo: '2026-11-05T17:00',
+    prioridade: 'ALTA',
+    percentual_atendimento: 100,
+    custo_estimado: 1200,
+    status: 'CONCLUIDA',
+    atrasada: false
+  },
+  4: {
+    id: 4,
+    titulo: 'Revisar tarefas pendentes',
+    descricao:
+      'Revisar as tarefas que ainda estão pendentes e verificar os próximos passos.',
+    responsavel_nome: 'Ana Carolina',
+    area_nome: 'Administrativo',
+    prazo: '2026-11-01T17:00',
+    prioridade: 'BAIXA',
+    percentual_atendimento: 10,
+    custo_estimado: 400,
+    status: 'PENDENTE',
+    atrasada: true
+  }
+};
 
 export default function TarefaDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [tarefa, setTarefa] = useState(null);
-  const [historico, setHistorico] = useState([]);
+  const [tarefa, setTarefa] = useState(
+    tarefasDemo[id] || tarefasDemo[1]
+  );
+
   const [observacao, setObservacao] = useState('');
   const [justificativa, setJustificativa] = useState('');
 
-  const carregarDados = async () => {
-    try {
-      const [tarefaResponse, historicoResponse] = await Promise.all([
-        api.get(`/tarefas/${id}`),
-        api.get(`/tarefas/${id}/historico`)
-      ]);
-
-      setTarefa(tarefaResponse.data);
-      setHistorico(historicoResponse.data);
-    } catch (error) {
-      console.error('Erro ao carregar tarefa:', error);
-
-      alert(
-        error.response?.data?.mensagem ||
-          'Erro ao carregar os dados da tarefa.'
-      );
+  const [historico, setHistorico] = useState([
+    {
+      _id: '1',
+      acao: 'Tarefa criada',
+      valorAnterior: '-',
+      valorNovo: tarefa.status,
+      createdAt: '2026-11-10T08:30:00'
     }
+  ]);
+
+  const registrarHistorico = (acao, anterior, novo) => {
+    setHistorico((lista) => [
+      ...lista,
+      {
+        _id: `${Date.now()}`,
+        acao,
+        valorAnterior: anterior || '-',
+        valorNovo: novo || '-',
+        createdAt: new Date().toISOString()
+      }
+    ]);
   };
 
-  useEffect(() => {
-    carregarDados();
-  }, [id]);
+  const atualizarTarefa = (dados) => {
+    setTarefa((atual) => {
+      const novaTarefa = {
+        ...atual,
+        ...dados
+      };
 
-  const atualizarTarefa = async (dados) => {
-    try {
-      await api.put(`/tarefas/${id}`, dados);
-
-      await carregarDados();
-    } catch (error) {
-      console.error('Erro ao atualizar tarefa:', error);
-
-      alert(
-        error.response?.data?.mensagem ||
-          'Erro ao atualizar a tarefa.'
+      registrarHistorico(
+        'Atualização',
+        atual.status,
+        novaTarefa.status
       );
-    }
+
+      return novaTarefa;
+    });
   };
 
-  const adicionarObservacao = async () => {
+  const adicionarObservacao = () => {
     if (!observacao.trim()) {
       alert('Digite uma observação.');
       return;
     }
 
-    try {
-      await api.post(`/tarefas/${id}/observacoes`, {
-        texto: observacao.trim()
-      });
+    registrarHistorico(
+      'Observação',
+      '-',
+      observacao.trim()
+    );
 
-      setObservacao('');
-
-      await carregarDados();
-    } catch (error) {
-      console.error('Erro ao adicionar observação:', error);
-
-      alert(
-        error.response?.data?.mensagem ||
-          'Erro ao adicionar a observação.'
-      );
-    }
+    setObservacao('');
   };
 
-  const registrarJustificativa = async () => {
+  const registrarJustificativa = () => {
     if (!justificativa.trim()) {
       alert('Digite uma justificativa.');
       return;
     }
 
-    try {
-      await api.post(`/tarefas/${id}/justificativas`, {
-        percentual: tarefa.percentual_atendimento,
-        motivo: justificativa.trim()
-      });
-
-      setJustificativa('');
-
-      await carregarDados();
-    } catch (error) {
-      console.error('Erro ao registrar justificativa:', error);
-
-      alert(
-        error.response?.data?.mensagem ||
-          'Erro ao registrar a justificativa.'
-      );
-    }
-  };
-
-  if (!tarefa) {
-    return (
-      <div className="loading">
-        Carregando...
-      </div>
+    registrarHistorico(
+      'Justificativa',
+      `${tarefa.percentual_atendimento}%`,
+      justificativa.trim()
     );
-  }
+
+    setJustificativa('');
+  };
 
   return (
     <div className="content standalone">
 
-      {/* VOLTAR */}
       <button
         className="secondary"
         onClick={() => navigate('/tarefas')}
@@ -117,9 +151,7 @@ export default function TarefaDetalhe() {
         ← Voltar
       </button>
 
-      {/* CABEÇALHO */}
       <div className="detail-head">
-
         <div>
           <h1>{tarefa.titulo}</h1>
 
@@ -133,42 +165,30 @@ export default function TarefaDetalhe() {
             ? 'ATRASADA'
             : tarefa.status}
         </span>
-
       </div>
 
-      {/* INFORMAÇÕES */}
       <div className="detail-grid">
 
         <div className="info">
           <span>Responsável</span>
-          <strong>
-            {tarefa.responsavel_nome || '-'}
-          </strong>
+          <strong>{tarefa.responsavel_nome}</strong>
         </div>
 
         <div className="info">
           <span>Área</span>
-          <strong>
-            {tarefa.area_nome || '-'}
-          </strong>
+          <strong>{tarefa.area_nome}</strong>
         </div>
 
         <div className="info">
           <span>Prazo</span>
           <strong>
-            {tarefa.prazo
-              ? new Date(tarefa.prazo).toLocaleString(
-                  'pt-BR'
-                )
-              : '-'}
+            {new Date(tarefa.prazo).toLocaleString('pt-BR')}
           </strong>
         </div>
 
         <div className="info">
           <span>Prioridade</span>
-          <strong>
-            {tarefa.prioridade || '-'}
-          </strong>
+          <strong>{tarefa.prioridade}</strong>
         </div>
 
         <div className="info">
@@ -182,17 +202,17 @@ export default function TarefaDetalhe() {
           <span>Custo</span>
           <strong>
             R${' '}
-            {Number(
-              tarefa.custo_estimado || 0
-            ).toLocaleString('pt-BR', {
-              minimumFractionDigits: 2
-            })}
+            {Number(tarefa.custo_estimado || 0).toLocaleString(
+              'pt-BR',
+              {
+                minimumFractionDigits: 2
+              }
+            )}
           </strong>
         </div>
 
       </div>
 
-      {/* AÇÕES */}
       <div className="actions">
 
         <button
@@ -203,7 +223,8 @@ export default function TarefaDetalhe() {
               percentual_atendimento: Math.max(
                 Number(tarefa.percentual_atendimento || 0),
                 1
-              )
+              ),
+              atrasada: false
             })
           }
         >
@@ -215,7 +236,8 @@ export default function TarefaDetalhe() {
           onClick={() =>
             atualizarTarefa({
               status: 'CONCLUIDA',
-              percentual_atendimento: 100
+              percentual_atendimento: 100,
+              atrasada: false
             })
           }
         >
@@ -235,7 +257,6 @@ export default function TarefaDetalhe() {
 
       </div>
 
-      {/* OBSERVAÇÕES E JUSTIFICATIVAS */}
       <div className="panel">
 
         <h3>Observação</h3>
@@ -274,24 +295,19 @@ export default function TarefaDetalhe() {
 
       </div>
 
-      {/* HISTÓRICO */}
       <div className="panel">
 
         <h3>Histórico</h3>
 
         {historico.length === 0 ? (
-          <p>
-            Nenhum registro no histórico.
-          </p>
+          <p>Nenhum registro no histórico.</p>
         ) : (
           historico.map((item) => (
             <div
               className="history"
               key={item._id}
             >
-              <b>
-                {item.acao}
-              </b>
+              <b>{item.acao}</b>
 
               <span>
                 {item.valorAnterior || '-'}
